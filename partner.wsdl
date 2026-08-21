@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:tns="http://campus-pay.example.com/payment"
+    targetNamespace="http://campus-pay.example.com/payment"
+    name="CampusPayPaymentService">
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://campus-pay.example.com/payment"
+               elementFormDefault="qualified">
+      <xsd:element name="chargePayment">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="orderId" type="xsd:string"/>
+            <xsd:element name="amount" type="xsd:decimal"/>
+            <xsd:element name="currency" type="xsd:string"/>
+            <xsd:element name="cardToken" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="chargePaymentResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="transactionId" type="xsd:string"/>
+            <xsd:element name="status" type="xsd:string"/>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="PaymentFault">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="code" type="xsd:string"/>
+            <xsd:element name="description" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="ChargePaymentRequest">
+    <wsdl:part name="parameters" element="tns:chargePayment"/>
+  </wsdl:message>
+
+  <wsdl:message name="ChargePaymentResponse">
+    <wsdl:part name="parameters" element="tns:chargePaymentResponse"/>
+  </wsdl:message>
+
+  <wsdl:message name="PaymentFaultMessage">
+    <wsdl:part name="fault" element="tns:PaymentFault"/>
+  </wsdl:message>
+
+  <wsdl:portType name="PaymentPortType">
+    <wsdl:operation name="chargePayment">
+      <wsdl:input message="tns:ChargePaymentRequest"/>
+      <wsdl:output message="tns:ChargePaymentResponse"/>
+      <wsdl:fault name="PaymentFault" message="tns:PaymentFaultMessage"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="PaymentSoapBinding" type="tns:PaymentPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="chargePayment">
+      <soap:operation soapAction="http://campus-pay.example.com/payment/chargePayment"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="PaymentFault">
+        <soap:fault name="PaymentFault" use="literal"/>
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="CampusPayService">
+    <wsdl:port name="PaymentSoapPort" binding="tns:PaymentSoapBinding">
+      <soap:address location="https://api.campus-pay.example.com/soap/payment"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

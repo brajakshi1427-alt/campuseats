@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:pay="http://campus-pay.example.com/payment">
+  <soap:Header>
+    <pay:Authentication>
+      <pay:merchantId>CE-MERCHANT-001</pay:merchantId>
+      <pay:apiKey>DEMO-KEY-12345</pay:apiKey>
+    </pay:Authentication>
+  </soap:Header>
+  <soap:Body>
+    <pay:chargePayment>
+      <pay:orderId>ORD-1001</pay:orderId>
+      <pay:amount>500.00</pay:amount>
+      <pay:currency>INR</pay:currency>
+      <pay:cardToken>TOKEN-987654</pay:cardToken>
+    </pay:chargePayment>
+  </soap:Body>
+</soap:Envelope>
