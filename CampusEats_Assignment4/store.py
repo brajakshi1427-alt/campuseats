@@ -1,0 +1,2 @@
+orders = {}
+idempotency_store = {}
