@@ -1,57 +1,170 @@
-POST    /orders
-GET     /orders
-GET     /orders/{id}
-PUT     /orders/{id}
-DELETE  /orders/{id}
-POST    /orders/{id}/cancel
-OPTIONS /orders/{id}
-200 OK
-201 Created
-202 Accepted
-204 No Content
-304 Not Modified
-400 Bad Request
-401 Unauthorized
-404 Not Found
-409 Conflict
-412 Precondition Failed
-Step 3: NOTES.md banao
-Method Map
-Action	Method	URL
-Create Order	POST	/orders
-List Orders	GET	/orders
-Get Order	GET	/orders/{id}
-Update Order	PUT	/orders/{id}
-Delete Order	DELETE	/orders/{id}
-Cancel Order	POST	/orders/{id}/cancel
-Safe & Idempotent
-Endpoint	Safe	Idempotent
-GET /orders	Yes	Yes
-GET /orders/{id}	Yes	Yes
-PUT /orders/{id}	No	Yes
-DELETE /orders/{id}	No	Yes
-POST /orders	No	No
-POST /orders/{id}/cancel	No	Yes
-Safe Retry Plan
-Endpoint	Mechanism	Why
-POST /orders	Idempotency-Key	Avoid duplicate orders
-GET /orders/{id}	If-None-Match	Avoid unnecessary data transfer
-PUT /orders/{id}	If-Match	Prevent overwriting newer changes
-Step 4: curl-transcript.txt
-201 Created
-Location header
-Same Idempotency-Key request
-304 Not Modified
-412 Precondition Failed
-400 Bad Request
-404 Not Found
-401 Unauthorized
-Step 5: Team Details
-Team ID: XXXX
-Roll No: XXXXX
-Name: XXXXX
-Roll No: XXXXX
-Name: XXXXX
-Ab mujhe openapi.yaml bhejo
+openapi: 3.0.3
 
-Ab sabse important next step openapi.yaml hai. Uska current content paste kar do. Main Assignment 5 ke hisab se exact update karke dunga.
+info:
+  title: CampusEats Order Service API
+  version: 1.0.0
+  description: REST API for managing CampusEats orders.
+
+servers:
+  - url: http://localhost:5000
+
+paths:
+
+  /orders:
+    get:
+      summary: List all orders
+      responses:
+        '200':
+          description: Orders retrieved successfully
+
+    post:
+      summary: Create a new order
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+      responses:
+        '201':
+          description: Order created
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+
+  /orders/{id}:
+    get:
+      summary: Get order by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-None-Match
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order found
+        '304':
+          description: Not Modified
+        '404':
+          description: Order not found
+
+    put:
+      summary: Update an order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: If-Match
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+      responses:
+        '200':
+          description: Order updated
+        '404':
+          description: Order not found
+        '412':
+          description: Precondition Failed
+
+    delete:
+      summary: Delete an order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: No Content
+        '404':
+          description: Order not found
+
+    options:
+      summary: Supported methods
+      responses:
+        '200':
+          description: Allowed methods returned
+
+  /orders/{id}/cancel:
+    post:
+      summary: Cancel an order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '202':
+          description: Order cancellation accepted
+        '404':
+          description: Order not found
+        '409':
+          description: Order already cancelled
+
+components:
+
+  schemas:
+
+    OrderInput:
+      type: object
+      required:
+        - customer_name
+        - item
+      properties:
+        customer_name:
+          type: string
+          example: Vaishnavi Tiwari
+        item:
+          type: string
+          example: Veg Burger
+        quantity:
+          type: integer
+          example: 2
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 101
+        customer_name:
+          type: string
+        item:
+          type: string
+        quantity:
+          type: integer
+        status:
+          type: string
+          example: CREATED
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Not Found
+        message:
+          type: string
+          example: Order does not exist
