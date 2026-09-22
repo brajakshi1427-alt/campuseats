@@ -2,9 +2,15 @@
 
 ## Team Members
 
-1. Brajakshi Mandloi (20252651016)
-2. Vaishnavi Tiwari (20252651061)
+# Team Information
 
+
+
+Roll No: 20252651061
+Name: Vaishnavi Tiwari
+
+Roll No:20252651016
+Name: Brajakshi Mandloi
 ---
 
 # A4 Resource Table
