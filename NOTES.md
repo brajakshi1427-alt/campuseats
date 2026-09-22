@@ -89,11 +89,34 @@ In the REST-based solution:
 - Find still exists through documentation repositories and API catalogues.
 - Bind still exists when clients call the API endpoint.
 
-Traditional UDDI registries are no longer used.
-Their role has largely been replaced by API documentation and service URLs.
+  Method Map
+Action	Method	URL
+Create Order	POST	/orders
+List Orders	GET	/orders
+Get Order	GET	/orders/{id}
+Update Order	PUT	/orders/{id}
+Delete Order	DELETE	/orders/{id}
+Cancel Order	POST	/orders/{id}/cancel
 
----
-
+Safe and Idempotent Endpoints
+Endpoint	Safe	Idempotent
+GET /orders	Yes	Yes
+GET /orders/{id}	Yes	Yes
+PUT /orders/{id}	No	Yes
+DELETE /orders/{id}	No	Yes
+POST /orders	No	No
+POST /orders/{id}/cancel	No	Yes
+Safe Retry Plan
+Endpoint	Mechanism	Reason
+POST /orders	Idempotency-Key	Prevent duplicate order creation
+GET /orders/{id}	If-None-Match	Avoid unnecessary data transfer
+PUT /orders/{id}	If-Match	Prevent overwriting newer updates
+Headers Table
+Endpoint	Request Headers	Response Headers
+POST /orders	Authorization, Idempotency-Key	Location
+GET /orders/{id}	Authorization, If-None-Match	ETag, Cache-Control
+PUT /orders/{id}	Authorization, If-Match	ETag
+DELETE /orders/{id}	Authorization	-
 # Question 4
 
 The validation responsibility is now handled by the `validate()` function in the application code.
@@ -115,3 +138,157 @@ These guarantees are useful when handling sensitive financial transactions.
 # Conclusion
 
 The REST version of CampusEats Order Service is simpler and more lightweight than the SOAP-based design. OpenAPI replaces WSDL for API description, HTTP status codes replace SOAP faults, and REST resources replace operation-based service contracts.
+
+
+
+
+
+
+## Method Map
+
+| Action | Method | URL |
+|----------|----------|----------|
+| Create Order | POST | /orders |
+| List Orders | GET | /orders |
+| Get Order | GET | /orders/{id} |
+| Update Order | PUT | /orders/{id} |
+| Delete Order | DELETE | /orders/{id} |
+| Cancel Order | POST | /orders/{id}/cancel |
+
+
+
+## Safe and Idempotent Endpoints
+
+| Endpoint | Safe | Idempotent |
+|-----------|------|------------|
+| GET /orders | Yes | Yes |
+| GET /orders/{id} | Yes | Yes |
+| PUT /orders/{id} | No | Yes |
+| DELETE /orders/{id} | No | Yes |
+| POST /orders | No | No |
+| POST /orders/{id}/cancel | No | Yes |
+Step 3: Headers Table
+
+
+
+## Headers Table
+
+| Endpoint | Request Headers | Response Headers |
+|-----------|----------------|------------------|
+| POST /orders | Authorization, Idempotency-Key | Location, Content-Type |
+| GET /orders/{id} | Authorization, If-None-Match | ETag, Cache-Control |
+| PUT /orders/{id} | Authorization, If-Match | ETag |
+| DELETE /orders/{id} | Authorization | - |
+| OPTIONS /orders/{id} | - | Allow |
+Step 4: Safe Retry Plan
+
+
+## Safe Retry Plan
+
+| Endpoint | Mechanism | Reason |
+|-----------|-----------|---------|
+| POST /orders | Idempotency-Key | Prevent duplicate order creation |
+| GET /orders/{id} | If-None-Match | Avoid unnecessary data transfer |
+| PUT /orders/{id} | If-Match | Prevent overwriting newer updates |
+**Headers Table**
+Endpoint	Request Headers	Response Headers
+POST /orders	Authorization, Idempotency-Key	Location
+GET /orders/{id}	Authorization, If-None-Match	ETag, Cache-Control
+PUT /orders/{id}	Authorization, If-Match	ETag
+DELETE /orders/{id}	Authorization	-
+
+## Safe Retry Plan
+
+| Endpoint | Mechanism | Reason |
+|-----------|-----------|---------|
+| POST /orders | Idempotency-Key | Prevent duplicate order creation if request is retried |
+| GET /orders/{id} | If-None-Match | Avoid sending unchanged data and support 304 Not Modified |
+| PUT /orders/{id} | If-Match | Prevent overwriting changes made by another client |
+Q1
+## Q1
+
+1. POST /orders
+   - Success Status: 201 Created
+   - Important Header: Location
+   - Reason: It tells the client where the newly created order resource is located.
+
+2. GET /orders/{id}
+   - Success Status: 200 OK
+   - Important Header: ETag
+   - Reason: It supports caching and conditional requests.
+
+3. DELETE /orders/{id}
+   - Success Status: 204 No Content
+   - Important Header: Authorization
+   - Reason: Only authorized users should delete resources.
+Q2
+## Q2
+
+Safe endpoints:
+- GET /orders
+- GET /orders/{id}
+
+Idempotent endpoints:
+- GET /orders
+- GET /orders/{id}
+- PUT /orders/{id}
+- DELETE /orders/{id}
+- POST /orders/{id}/cancel
+
+Neither safe nor idempotent:
+- POST /orders
+
+POST /orders is made retry-safe using the Idempotency-Key header. Repeating the same request with the same key returns the original result instead of creating a duplicate order.
+Q3
+## Q3
+
+Example ETag:
+"1-PENDING"
+
+304 Request:
+
+GET /orders/1
+If-None-Match: "1-PENDING"
+
+Response:
+304 Not Modified
+
+This saves bandwidth because the resource has not changed.
+
+412 Request:
+
+PUT /orders/1
+If-Match: "1-PENDING"
+
+If the resource has changed and the ETag no longer matches:
+
+Response:
+412 Precondition Failed
+
+This prevents one client from accidentally overwriting another client's changes.
+Q4
+## Q4
+
+400 Bad Request Example:
+
+POST /orders
+
+{
+  "studentId": "S1"
+}
+
+Reason:
+Required fields are missing.
+
+422 Unprocessable Entity Example:
+
+POST /orders
+
+{
+  "studentId": "S1",
+  "itemId": "I1",
+  "quantity": -5
+}
+
+Reason:
+The JSON structure is valid, but the business rule is violated because quantity cannot be negative.
