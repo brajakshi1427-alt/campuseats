@@ -120,4 +120,13 @@ These guarantees are useful when handling sensitive financial transactions.
 
 # Conclusion
 
+Method Map
+Action	                Method                      	URL
+Create Order	         POST                        /orders
+List Orders	            GET	                      /orders
+Get Order	            GET	                      /orders/{id}
+Update Order	         PUT	                      /orders/{id}
+Delete Order	         DELETE	                   /orders/{id}
+Cancel Order	         POST	                      /orders/{id}/cancel
+
 The REST version of CampusEats Order Service is simpler and more lightweight than the SOAP-based design. OpenAPI replaces WSDL for API description, HTTP status codes replace SOAP faults, and REST resources replace operation-based service contracts.
