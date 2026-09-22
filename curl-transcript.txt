@@ -1,0 +1,89 @@
+====================================================
+1. Create Order (201 Created + Location)
+====================================================
+
+curl -v -X POST http://localhost:5000/orders \
+-H "Authorization: Bearer token123" \
+-H "Idempotency-Key: abc123" \
+-H "Content-Type: application/json" \
+-d '{"studentId":"S1","itemId":"I1","quantity":2}'
+
+Response:
+HTTP/1.1 201 Created
+Location: /orders/1
+
+
+====================================================
+2. Repeat Create with Same Idempotency-Key
+====================================================
+
+curl -v -X POST http://localhost:5000/orders \
+-H "Authorization: Bearer token123" \
+-H "Idempotency-Key: abc123" \
+-H "Content-Type: application/json" \
+-d '{"studentId":"S1","itemId":"I1","quantity":2}'
+
+Response:
+HTTP/1.1 201 Created
+
+Original order returned. No duplicate order created.
+
+
+====================================================
+3. Conditional GET (304 Not Modified)
+====================================================
+
+curl -v http://localhost:5000/orders/1 \
+-H "Authorization: Bearer token123" \
+-H 'If-None-Match: "1-PENDING"'
+
+Response:
+HTTP/1.1 304 Not Modified
+
+
+====================================================
+4. Conditional PUT (412 Precondition Failed)
+====================================================
+
+curl -v -X PUT http://localhost:5000/orders/1 \
+-H "Authorization: Bearer token123" \
+-H 'If-Match: "OLD-ETAG"' \
+-H "Content-Type: application/json" \
+-d '{"quantity":5}'
+
+Response:
+HTTP/1.1 412 Precondition Failed
+
+
+====================================================
+5. 400 Bad Request
+====================================================
+
+curl -v -X POST http://localhost:5000/orders \
+-H "Authorization: Bearer token123" \
+-H "Content-Type: application/json" \
+-d '{}'
+
+Response:
+HTTP/1.1 400 Bad Request
+
+
+====================================================
+6. 404 Not Found
+====================================================
+
+curl -v http://localhost:5000/orders/999 \
+-H "Authorization: Bearer token123"
+
+Response:
+HTTP/1.1 404 Not Found
+
+
+====================================================
+7. 401 Unauthorized
+====================================================
+
+curl -v http://localhost:5000/orders/1
+
+Response:
+HTTP/1.1 401 Unauthorized
