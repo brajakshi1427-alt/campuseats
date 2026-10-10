@@ -1,12 +1,9 @@
 # CS 543 - Assignment 6 - NOTES
 
-<!--TEAM-->
-**Team ID:** TEAM-00
-
 | Roll No | Name |
 |---|---|
-| ROLL-1 | Member One |
-<!--/TEAM-->
+| 20252651016 | Brajakshi Mandloi |
+| 20252651061 | Vaishnavi Tiwari |
 
 Service: Orders (same service as Assignments 4 and 5, no new service). Folder: `Assignment6/`
 
