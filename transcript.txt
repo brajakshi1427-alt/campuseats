@@ -1,0 +1,1055 @@
+CampusEats Orders - curl transcript (2026-10-10 22:30)
+mode: curl -v
+
+==============================================================================
+## 1. SUCCESS: create an order (201 + Location)
+$ curl -v -X POST http://127.0.0.1:5000/orders -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -H "Idempotency-Key: demo-key-001" -d '{"items": [{"item_id": "dosa", "qty": 2}, {"item_id": "tea", "qty": 1}], "address": "Hostel B, Room 12"}'
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55321 
+* using HTTP/1.x
+> POST /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> Idempotency-Key: demo-key-001
+> Content-Length: 104
+> 
+} [104 bytes data]
+* upload completely sent off: 104 bytes
+< HTTP/1.1 201 CREATED
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 456
+< Location: /orders/1
+< ETag: "3e774731d33d9224"
+< Cache-Control: no-store
+< X-Request-ID: d04a99fd01ff
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 29
+< Connection: close
+< 
+{ [456 bytes data]
+* shutting down connection #0
+{"id": 1, "status": "placed", "items": [{"item_id": "dosa", "name": "Masala Dosa", "qty": 2, "unit_price": 40, "line_total": 80}, {"item_id": "tea", "name": "Masala Tea", "qty": 1, "unit_price": 10, "line_total": 10}], "address": "Hostel B, Room 12", "total": 90, "currency": "INR", "paid": true, "created_at": "2026-10-10T17:00:28+00:00", "updated_at": "2026-10-10T17:00:28+00:00", "links": {"self": "/orders/1", "cancellation": "/orders/1/cancellation"}}
+
+==============================================================================
+## 2. IDEMPOTENT REPEAT: same body + same Idempotency-Key returns the original
+$ curl -v -X POST http://127.0.0.1:5000/orders -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -H "Idempotency-Key: demo-key-001" -d '{"items": [{"item_id": "dosa", "qty": 2}, {"item_id": "tea", "qty": 1}], "address": "Hostel B, Room 12"}'
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55323 
+* using HTTP/1.x
+> POST /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> Idempotency-Key: demo-key-001
+> Content-Length: 104
+> 
+} [104 bytes data]
+* upload completely sent off: 104 bytes
+< HTTP/1.1 201 CREATED
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 456
+< Location: /orders/1
+< ETag: "3e774731d33d9224"
+< Cache-Control: no-store
+< Idempotent-Replayed: true
+< X-Request-ID: bb37ee765eb4
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 28
+< Connection: close
+< 
+{ [456 bytes data]
+* shutting down connection #0
+{"id": 1, "status": "placed", "items": [{"item_id": "dosa", "name": "Masala Dosa", "qty": 2, "unit_price": 40, "line_total": 80}, {"item_id": "tea", "name": "Masala Tea", "qty": 1, "unit_price": 10, "line_total": 10}], "address": "Hostel B, Room 12", "total": 90, "currency": "INR", "paid": true, "created_at": "2026-10-10T17:00:28+00:00", "updated_at": "2026-10-10T17:00:28+00:00", "links": {"self": "/orders/1", "cancellation": "/orders/1/cancellation"}}
+
+==============================================================================
+## 3. READ one order (200 + ETag + Cache-Control)
+$ curl -v -X GET http://127.0.0.1:5000/orders/1 -H "Authorization: Bearer student-1"
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55324 
+* using HTTP/1.x
+> GET /orders/1 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 456
+< ETag: "3e774731d33d9224"
+< Cache-Control: private, max-age=30, must-revalidate
+< X-Request-ID: 8f41ab898860
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 27
+< Connection: close
+< 
+{ [456 bytes data]
+* shutting down connection #0
+{"id": 1, "status": "placed", "items": [{"item_id": "dosa", "name": "Masala Dosa", "qty": 2, "unit_price": 40, "line_total": 80}, {"item_id": "tea", "name": "Masala Tea", "qty": 1, "unit_price": 10, "line_total": 10}], "address": "Hostel B, Room 12", "total": 90, "currency": "INR", "paid": true, "created_at": "2026-10-10T17:00:28+00:00", "updated_at": "2026-10-10T17:00:28+00:00", "links": {"self": "/orders/1", "cancellation": "/orders/1/cancellation"}}
+
+==============================================================================
+## 4. CONDITIONAL GET: If-None-Match with current ETag -> 304 Not Modified
+$ curl -v -X GET http://127.0.0.1:5000/orders/1 -H "Authorization: Bearer student-1" -H "If-None-Match: \"3e774731d33d9224\""
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55325 
+* using HTTP/1.x
+> GET /orders/1 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> If-None-Match: "3e774731d33d9224"
+> 
+* Request completely sent off
+< HTTP/1.1 304 NOT MODIFIED
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< ETag: "3e774731d33d9224"
+< Cache-Control: private, max-age=30, must-revalidate
+< X-Request-ID: c4d2983dc39d
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 26
+< Connection: close
+< 
+* shutting down connection #0
+
+
+==============================================================================
+## 5. CONDITIONAL WRITE: PATCH with current ETag -> 200, new ETag
+$ curl -v -X PATCH http://127.0.0.1:5000/orders/1 -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -H "If-Match: \"3e774731d33d9224\"" -d '{"address": "Library gate"}'
+------------------------------------------------------------------------------
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55326 
+* using HTTP/1.x
+> PATCH /orders/1 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> If-Match: "3e774731d33d9224"
+> Content-Length: 27
+> 
+} [27 bytes data]
+* upload completely sent off: 27 bytes
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 451
+< ETag: "f9adeea088e0d8fb"
+< Cache-Control: no-store
+< X-Request-ID: 78c7cd9f2ae0
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 25
+< Connection: close
+< 
+{ [451 bytes data]
+* shutting down connection #0
+{"id": 1, "status": "placed", "items": [{"item_id": "dosa", "name": "Masala Dosa", "qty": 2, "unit_price": 40, "line_total": 80}, {"item_id": "tea", "name": "Masala Tea", "qty": 1, "unit_price": 10, "line_total": 10}], "address": "Library gate", "total": 90, "currency": "INR", "paid": true, "created_at": "2026-10-10T17:00:28+00:00", "updated_at": "2026-10-10T17:00:28+00:00", "links": {"self": "/orders/1", "cancellation": "/orders/1/cancellation"}}
+
+==============================================================================
+## 6. CONDITIONAL WRITE with the OLD ETag -> 412 Precondition Failed
+$ curl -v -X PATCH http://127.0.0.1:5000/orders/1 -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -H "If-Match: \"3e774731d33d9224\"" -d '{"address": "Canteen"}'
+------------------------------------------------------------------------------
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55327 
+* using HTTP/1.x
+> PATCH /orders/1 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> If-Match: "3e774731d33d9224"
+> Content-Length: 22
+> 
+} [22 bytes data]
+* upload completely sent off: 22 bytes
+< HTTP/1.1 412 PRECONDITION FAILED
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 213
+< X-Request-ID: 26e1699ef729
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 24
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [213 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/precondition-failed", "title": "Precondition failed", "status": 412, "detail": "The order changed since you read it. GET it again and retry.", "instance": "/orders/1"}
+
+==============================================================================
+## 7. LIST with query string (filter + sort + page)
+$ curl -v -X GET http://127.0.0.1:5000/orders?status=placed&sort=-total&limit=5&offset=0 -H "Authorization: Bearer student-1"
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55328 
+* using HTTP/1.x
+> GET /orders?status=placed&sort=-total&limit=5&offset=0 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 501
+< Cache-Control: no-store
+< X-Request-ID: 629769b7e348
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 23
+< Connection: close
+< 
+{ [501 bytes data]
+* shutting down connection #0
+{"items": [{"id": 1, "status": "placed", "items": [{"item_id": "dosa", "name": "Masala Dosa", "qty": 2, "unit_price": 40, "line_total": 80}, {"item_id": "tea", "name": "Masala Tea", "qty": 1, "unit_price": 10, "line_total": 10}], "address": "Library gate", "total": 90, "currency": "INR", "paid": true, "created_at": "2026-10-10T17:00:28+00:00", "updated_at": "2026-10-10T17:00:28+00:00", "links": {"self": "/orders/1", "cancellation": "/orders/1/cancellation"}}], "total": 1, "limit": 5, "offset": 0}
+
+==============================================================================
+## 8. CONTENT NEGOTIATION: Accept: application/xml
+$ curl -v -X GET http://127.0.0.1:5000/orders/1 -H "Authorization: Bearer student-1" -H "Accept: application/xml"
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55329 
+* using HTTP/1.x
+> GET /orders/1 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Authorization: Bearer student-1
+> Accept: application/xml
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/xml; charset=utf-8
+< Content-Length: 628
+< ETag: "f9adeea088e0d8fb"
+< Cache-Control: private, max-age=30, must-revalidate
+< X-Request-ID: 1b23eddbd4c5
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 22
+< Connection: close
+< 
+{ [628 bytes data]
+* shutting down connection #0
+<?xml version="1.0" encoding="UTF-8"?><order><id>1</id><status>placed</status><items><item><item_id>dosa</item_id><name>Masala Dosa</name><qty>2</qty><unit_price>40</unit_price><line_total>80</line_total></item><item><item_id>tea</item_id><name>Masala Tea</name><qty>1</qty><unit_price>10</unit_price><line_total>10</line_total></item></items><address>Library gate</address><total>90</total><currency>INR</currency><paid>true</paid><created_at>2026-10-10T17:00:28+00:00</created_at><updated_at>2026-10-10T17:00:28+00:00</updated_at><links><self>/orders/1</self><cancellation>/orders/1/cancellation</cancellation></links></order>
+
+==============================================================================
+## 9. OPTIONS: Allow header lists the methods
+$ curl -v -X OPTIONS http://127.0.0.1:5000/orders/1
+------------------------------------------------------------------------------
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55330 
+* using HTTP/1.x
+> OPTIONS /orders/1 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 204 NO CONTENT
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Allow: GET, HEAD, PATCH, DELETE, OPTIONS
+< Access-Control-Allow-Methods: GET, HEAD, PATCH, DELETE, OPTIONS
+< Access-Control-Allow-Headers: Authorization, Content-Type, Accept, Idempotency-Key, If-Match, If-None-Match, X-HTTP-Method-Override
+< Access-Control-Max-Age: 600
+< X-Request-ID: 1f83d500b3e6
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< Connection: close
+< 
+* shutting down connection #0
+
+
+==============================================================================
+## 10. CORS PREFLIGHT from another origin
+$ curl -v -X OPTIONS http://127.0.0.1:5000/orders -H "Origin: http://localhost:3000" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: authorization, content-type, idempotency-key"
+------------------------------------------------------------------------------
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55331 
+* using HTTP/1.x
+> OPTIONS /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Origin: http://localhost:3000
+> Access-Control-Request-Method: POST
+> Access-Control-Request-Headers: authorization, content-type, idempotency-key
+> 
+* Request completely sent off
+< HTTP/1.1 204 NO CONTENT
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Allow: GET, HEAD, POST, OPTIONS
+< Access-Control-Allow-Methods: GET, HEAD, POST, OPTIONS
+< Access-Control-Allow-Headers: Authorization, Content-Type, Accept, Idempotency-Key, If-Match, If-None-Match, X-HTTP-Method-Override
+< Access-Control-Max-Age: 600
+< X-Request-ID: a553966d7081
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< Connection: close
+< 
+* shutting down connection #0
+
+
+==============================================================================
+## 11. METHOD OVERRIDE fallback: POST + X-HTTP-Method-Override: PATCH
+$ curl -v -X POST http://127.0.0.1:5000/orders/1 -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -H "X-HTTP-Method-Override: PATCH" -d '{"address": "Gate 2"}'
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55332 
+* using HTTP/1.x
+> POST /orders/1 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> X-HTTP-Method-Override: PATCH
+> Content-Length: 21
+> 
+} [21 bytes data]
+* upload completely sent off: 21 bytes
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 445
+< ETag: "a28b1e3effeabe43"
+< Cache-Control: no-store
+< X-Request-ID: 520df1cc2a6f
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 21
+< Connection: close
+< 
+{ [445 bytes data]
+* shutting down connection #0
+{"id": 1, "status": "placed", "items": [{"item_id": "dosa", "name": "Masala Dosa", "qty": 2, "unit_price": 40, "line_total": 80}, {"item_id": "tea", "name": "Masala Tea", "qty": 1, "unit_price": 10, "line_total": 10}], "address": "Gate 2", "total": 90, "currency": "INR", "paid": true, "created_at": "2026-10-10T17:00:28+00:00", "updated_at": "2026-10-10T17:00:28+00:00", "links": {"self": "/orders/1", "cancellation": "/orders/1/cancellation"}}
+
+==============================================================================
+## 12. FAILURE 400: malformed JSON
+$ curl -v -X POST http://127.0.0.1:5000/orders -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -d '{"items": ['
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55333 
+* using HTTP/1.x
+> POST /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> Content-Length: 11
+> 
+} [11 bytes data]
+* upload completely sent off: 11 bytes
+< HTTP/1.1 400 BAD REQUEST
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 184
+< X-Request-ID: 89276b8f96a4
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 20
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [184 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/malformed-body", "title": "Malformed request body", "status": 400, "detail": "The request body is not valid JSON.", "instance": "/orders"}
+
+==============================================================================
+## 13. FAILURE 422: two bad fields at once (field-level errors[])
+$ curl -v -X POST http://127.0.0.1:5000/orders -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -d '{"items": [{"item_id": "dosa", "qty": 0}], "address": ""}'
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55334 
+* using HTTP/1.x
+> POST /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> Content-Length: 57
+> 
+} [57 bytes data]
+* upload completely sent off: 57 bytes
+< HTTP/1.1 422 UNPROCESSABLE ENTITY
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 316
+< X-Request-ID: f260dd75a476
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 19
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [316 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/validation-failed", "title": "Validation failed", "status": 422, "detail": "2 field(s) failed validation.", "instance": "/orders", "errors": [{"field": "items[0].qty", "message": "must be an integer >= 1"}, {"field": "address", "message": "must be a non-empty string"}]}
+
+==============================================================================
+## 14. FAILURE 422: empty cart
+$ curl -v -X POST http://127.0.0.1:5000/orders -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -d '{"items": [], "address": "Hostel B"}'
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55335 
+* using HTTP/1.x
+> POST /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> Content-Length: 36
+> 
+} [36 bytes data]
+* upload completely sent off: 36 bytes
+< HTTP/1.1 422 UNPROCESSABLE ENTITY
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 235
+< X-Request-ID: 46400c1bc8f7
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 18
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [235 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/empty-cart", "title": "Cart is empty", "status": 422, "detail": "The cart has no items.", "instance": "/orders", "errors": [{"field": "items", "message": "must contain at least one item"}]}
+
+==============================================================================
+## 15. FAILURE 422: item unavailable
+$ curl -v -X POST http://127.0.0.1:5000/orders -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -d '{"items": [{"item_id": "pizza", "qty": 1}], "address": "Hostel B"}'
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55336 
+* using HTTP/1.x
+> POST /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> Content-Length: 66
+> 
+} [66 bytes data]
+* upload completely sent off: 66 bytes
+< HTTP/1.1 422 UNPROCESSABLE ENTITY
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 273
+< X-Request-ID: 0284554c5b2c
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 17
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [273 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/item-unavailable", "title": "Item unavailable", "status": 422, "detail": "One or more items cannot be ordered right now.", "instance": "/orders", "errors": [{"field": "items[0].item_id", "message": "'pizza' is not available"}]}
+
+==============================================================================
+## 16. FAILURE 422: payment declined (Payments said no, mapped to our error)
+$ curl -v -X POST http://127.0.0.1:5000/orders -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -d '{"items": [{"item_id": "thali", "qty": 20}], "address": "Hostel B"}'
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55337 
+* using HTTP/1.x
+> POST /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> Content-Length: 67
+> 
+} [67 bytes data]
+* upload completely sent off: 67 bytes
+< HTTP/1.1 422 UNPROCESSABLE ENTITY
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 202
+< X-Request-ID: a8862b18cdff
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 16
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [202 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/payment-declined", "title": "Payment declined", "status": 422, "detail": "The payment was declined. Try a different payment method.", "instance": "/orders"}
+
+==============================================================================
+## 17. FAILURE 404: unknown order id
+$ curl -v -X GET http://127.0.0.1:5000/orders/999 -H "Authorization: Bearer student-1"
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55339 
+* using HTTP/1.x
+> GET /orders/999 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> 
+* Request completely sent off
+< HTTP/1.1 404 NOT FOUND
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 170
+< X-Request-ID: 46f610fcc2ff
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 15
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [170 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/order-not-found", "title": "Order not found", "status": 404, "detail": "No order with id '999'.", "instance": "/orders/999"}
+
+==============================================================================
+## 18. FAILURE 401: no Authorization header
+$ curl -v -X GET http://127.0.0.1:5000/orders
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55340 
+* using HTTP/1.x
+> GET /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 401 UNAUTHORIZED
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 183
+< WWW-Authenticate: Bearer realm="campuseats"
+< X-Request-ID: 4470ada9faa4
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 28
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [183 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/unauthorized", "title": "Authentication required", "status": 401, "detail": "Send Authorization: Bearer <token>.", "instance": "/orders"}
+
+==============================================================================
+## 19. FAILURE 406: Accept: text/html
+$ curl -v -X GET http://127.0.0.1:5000/orders/1 -H "Authorization: Bearer student-1" -H "Accept: text/html"
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55341 
+* using HTTP/1.x
+> GET /orders/1 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Authorization: Bearer student-1
+> Accept: text/html
+> 
+* Request completely sent off
+< HTTP/1.1 406 NOT ACCEPTABLE
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 205
+< X-Request-ID: cc1d6b478a8c
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [205 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/not-acceptable", "title": "Not acceptable", "status": 406, "detail": "This service can produce application/json and application/xml.", "instance": "/orders/1"}
+
+==============================================================================
+## 20. FAILURE 428: progression without If-Match
+$ curl -v -X POST http://127.0.0.1:5000/orders/1/progression -H "Authorization: Bearer student-1"
+------------------------------------------------------------------------------
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55343 
+* using HTTP/1.x
+> POST /orders/1/progression HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> 
+* Request completely sent off
+< HTTP/1.1 428 PRECONDITION REQUIRED
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 235
+< X-Request-ID: 2fb66c17c086
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 14
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [235 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/precondition-required", "title": "Precondition required", "status": 428, "detail": "Send If-Match with the order's current ETag (GET the order first).", "instance": "/orders/1/progression"}
+
+==============================================================================
+## 21. STATE CHANGE: progression with If-Match (placed -> preparing)
+$ curl -v -X POST http://127.0.0.1:5000/orders/1/progression -H "Authorization: Bearer student-1" -H "If-Match: \"a28b1e3effeabe43\""
+------------------------------------------------------------------------------
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55345 
+* using HTTP/1.x
+> POST /orders/1/progression HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> If-Match: "a28b1e3effeabe43"
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 406
+< ETag: "2ce70a5ff3cfa300"
+< Cache-Control: no-store
+< X-Request-ID: a90acdbde5e1
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 12
+< Connection: close
+< 
+{ [406 bytes data]
+* shutting down connection #0
+{"id": 1, "status": "preparing", "items": [{"item_id": "dosa", "name": "Masala Dosa", "qty": 2, "unit_price": 40, "line_total": 80}, {"item_id": "tea", "name": "Masala Tea", "qty": 1, "unit_price": 10, "line_total": 10}], "address": "Gate 2", "total": 90, "currency": "INR", "paid": true, "created_at": "2026-10-10T17:00:28+00:00", "updated_at": "2026-10-10T17:00:28+00:00", "links": {"self": "/orders/1"}}
+
+==============================================================================
+## 22. FAILURE 409: cancel an order that is already being prepared (illegal-transition)
+$ curl -v -X POST http://127.0.0.1:5000/orders/1/cancellation -H "Authorization: Bearer student-1"
+------------------------------------------------------------------------------
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55347 
+* using HTTP/1.x
+> POST /orders/1/cancellation HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> 
+* Request completely sent off
+< HTTP/1.1 409 CONFLICT
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 238
+< X-Request-ID: 1ed6c67f4e9f
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 11
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [238 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/illegal-transition", "title": "Illegal state transition", "status": 409, "detail": "Only an order that is 'placed' can be cancelled (it is 'preparing').", "instance": "/orders/1/cancellation"}
+
+==============================================================================
+## 23. FAILURE 422: Idempotency-Key reused with a DIFFERENT body
+$ curl -v -X POST http://127.0.0.1:5000/orders -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -H "Idempotency-Key: demo-key-001" -d '{"items": [{"item_id": "tea", "qty": 1}], "address": "X"}'
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55348 
+* using HTTP/1.x
+> POST /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> Idempotency-Key: demo-key-001
+> Content-Length: 57
+> 
+} [57 bytes data]
+* upload completely sent off: 57 bytes
+< HTTP/1.1 422 UNPROCESSABLE ENTITY
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 249
+< X-Request-ID: cc5ebbc59742
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 10
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [249 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/idempotency-key-reuse", "title": "Idempotency key reused with a different request", "status": 422, "detail": "This Idempotency-Key was already used with a different request body.", "instance": "/orders"}
+
+==============================================================================
+## 24. create a second order
+$ curl -v -X POST http://127.0.0.1:5000/orders -H "Content-Type: application/json" -H "Authorization: Bearer student-1" -d '{"items": [{"item_id": "dosa", "qty": 2}, {"item_id": "tea", "qty": 1}], "address": "Hostel B, Room 12"}'
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, POST is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55349 
+* using HTTP/1.x
+> POST /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Content-Type: application/json
+> Authorization: Bearer student-1
+> Content-Length: 104
+> 
+} [104 bytes data]
+* upload completely sent off: 104 bytes
+< HTTP/1.1 201 CREATED
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 456
+< Location: /orders/2
+< ETag: "ed5cce4a20661ad6"
+< Cache-Control: no-store
+< X-Request-ID: c3121cf240c8
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 9
+< Connection: close
+< 
+{ [456 bytes data]
+* shutting down connection #0
+{"id": 2, "status": "placed", "items": [{"item_id": "dosa", "name": "Masala Dosa", "qty": 2, "unit_price": 40, "line_total": 80}, {"item_id": "tea", "name": "Masala Tea", "qty": 1, "unit_price": 10, "line_total": 10}], "address": "Hostel B, Room 12", "total": 90, "currency": "INR", "paid": true, "created_at": "2026-10-10T17:00:28+00:00", "updated_at": "2026-10-10T17:00:28+00:00", "links": {"self": "/orders/2", "cancellation": "/orders/2/cancellation"}}
+
+==============================================================================
+## 25. cancel it (200)
+$ curl -v -X POST http://127.0.0.1:5000/orders/2/cancellation -H "Authorization: Bearer student-1"
+------------------------------------------------------------------------------
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55351 
+* using HTTP/1.x
+> POST /orders/2/cancellation HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 417
+< ETag: "7a27a0ae0e194cb4"
+< Cache-Control: no-store
+< X-Request-ID: 22d58d340c3c
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 8
+< Connection: close
+< 
+{ [417 bytes data]
+* shutting down connection #0
+{"id": 2, "status": "cancelled", "items": [{"item_id": "dosa", "name": "Masala Dosa", "qty": 2, "unit_price": 40, "line_total": 80}, {"item_id": "tea", "name": "Masala Tea", "qty": 1, "unit_price": 10, "line_total": 10}], "address": "Hostel B, Room 12", "total": 90, "currency": "INR", "paid": true, "created_at": "2026-10-10T17:00:28+00:00", "updated_at": "2026-10-10T17:00:28+00:00", "links": {"self": "/orders/2"}}
+
+==============================================================================
+## 26. DELETE it (204, no body)
+$ curl -v -X DELETE http://127.0.0.1:5000/orders/2 -H "Authorization: Bearer student-1"
+------------------------------------------------------------------------------
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55352 
+* using HTTP/1.x
+> DELETE /orders/2 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> 
+* Request completely sent off
+< HTTP/1.1 204 NO CONTENT
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< X-Request-ID: 6b1ea079a555
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 7
+< Connection: close
+< 
+* shutting down connection #0
+
+
+==============================================================================
+## 27. FAILURE 404: it is gone
+$ curl -v -X GET http://127.0.0.1:5000/orders/2 -H "Authorization: Bearer student-1"
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55353 
+* using HTTP/1.x
+> GET /orders/2 HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer student-1
+> 
+* Request completely sent off
+< HTTP/1.1 404 NOT FOUND
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 166
+< X-Request-ID: e7e4a1c36c67
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 6
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [166 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/order-not-found", "title": "Order not found", "status": 404, "detail": "No order with id '2'.", "instance": "/orders/2"}
+
+==============================================================================
+## 28. RATE LIMIT: first request of a fresh client (note the X-RateLimit headers)
+$ curl -v -X GET http://127.0.0.1:5000/orders -H "Authorization: Bearer burst-client"
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55354 
+* using HTTP/1.x
+> GET /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer burst-client
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:28 GMT
+< Content-Type: application/json; charset=utf-8
+< Content-Length: 51
+< Cache-Control: no-store
+< X-Request-ID: aad0f0ed41b2
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 29
+< Connection: close
+< 
+{ [51 bytes data]
+* shutting down connection #0
+{"items": [], "total": 0, "limit": 10, "offset": 0}
+
+==============================================================================
+## 29. FAILURE 429: budget exceeded (note Retry-After)
+$ curl -v -X GET http://127.0.0.1:5000/orders -H "Authorization: Bearer burst-client"
+------------------------------------------------------------------------------
+Note: Unnecessary use of -X or --request, GET is already inferred.
+*   Trying 127.0.0.1:5000...
+* Established connection to 127.0.0.1 (127.0.0.1 port 5000) from 127.0.0.1 port 55386 
+* using HTTP/1.x
+> GET /orders HTTP/1.1
+> Host: 127.0.0.1:5000
+> User-Agent: curl/8.21.0
+> Accept: */*
+> Authorization: Bearer burst-client
+> 
+* Request completely sent off
+< HTTP/1.1 429 TOO MANY REQUESTS
+< Server: Werkzeug/3.1.9 Python/3.13.15
+< Date: Sat, 10 Oct 2026 17:00:29 GMT
+< Content-Type: application/problem+json; charset=utf-8
+< Content-Length: 187
+< Retry-After: 60
+< X-Request-ID: a77e8715bf4f
+< X-Content-Type-Options: nosniff
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
+< Access-Control-Allow-Origin: *
+< Access-Control-Expose-Headers: Location, ETag, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, Idempotent-Replayed, X-Request-ID
+< Vary: Accept, Accept-Encoding, Origin
+< X-RateLimit-Limit: 30
+< X-RateLimit-Remaining: 0
+< Cache-Control: no-store
+< Connection: close
+< 
+{ [187 bytes data]
+* shutting down connection #0
+{"type": "https://campuseats.example/problems/rate-limited", "title": "Too many requests", "status": 429, "detail": "Request budget used up; wait before retrying.", "instance": "/orders"}

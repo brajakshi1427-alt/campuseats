@@ -1,0 +1,449 @@
+openapi: 3.0.3
+info:
+  title: CampusEats Orders API
+  version: 2.0.0
+  description: |
+    The Orders service of CampusEats. Students place food orders, read them,
+    change the delivery address, cancel them, and canteen staff move them
+    through preparation. Errors always use RFC 9457 Problem Details.
+servers:
+  - url: http://127.0.0.1:5000
+    description: Local development
+tags:
+  - name: orders
+    description: Order resources and their state-changing sub-resources
+
+security:
+  - bearerAuth: []
+
+paths:
+  /orders:
+    get:
+      tags: [orders]
+      summary: List my orders (filter, sort, paginate)
+      operationId: listOrders
+      parameters:
+        - name: status
+          in: query
+          schema: {$ref: "#/components/schemas/OrderStatus"}
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, -created_at, total, -total]
+            default: -created_at
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 50, default: 10}
+        - name: offset
+          in: query
+          schema: {type: integer, minimum: 0, default: 0}
+      responses:
+        "200":
+          description: A page of orders
+          headers:
+            X-RateLimit-Limit: {$ref: "#/components/headers/RateLimitLimit"}
+            X-RateLimit-Remaining: {$ref: "#/components/headers/RateLimitRemaining"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/OrderList"}
+            application/xml:
+              schema: {$ref: "#/components/schemas/OrderList"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "406": {$ref: "#/components/responses/NotAcceptable"}
+        "422": {$ref: "#/components/responses/ValidationFailed"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+    post:
+      tags: [orders]
+      summary: Place an order (safely retryable with Idempotency-Key)
+      operationId: createOrder
+      parameters:
+        - {$ref: "#/components/parameters/IdempotencyKey"}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/OrderCreate"}
+      responses:
+        "201":
+          description: Order placed (or the original order, when an Idempotency-Key is repeated)
+          headers:
+            Location: {$ref: "#/components/headers/Location"}
+            ETag: {$ref: "#/components/headers/ETag"}
+            Idempotent-Replayed:
+              description: '"true" when this is a replay of an earlier request'
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Order"}
+            application/xml:
+              schema: {$ref: "#/components/schemas/Order"}
+        "400": {$ref: "#/components/responses/MalformedBody"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "406": {$ref: "#/components/responses/NotAcceptable"}
+        "409": {$ref: "#/components/responses/RequestInProgress"}
+        "415": {$ref: "#/components/responses/UnsupportedMediaType"}
+        "422": {$ref: "#/components/responses/ValidationFailed"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+        "500": {$ref: "#/components/responses/InternalError"}
+        "502": {$ref: "#/components/responses/BadGateway"}
+        "503": {$ref: "#/components/responses/PaymentsUnavailable"}
+    options:
+      tags: [orders]
+      summary: Which methods does the collection support? (also CORS preflight)
+      security: []
+      parameters:
+        - name: Origin
+          in: header
+          required: false
+          schema: {type: string}
+        - name: Access-Control-Request-Method
+          in: header
+          required: false
+          schema: {type: string}
+      responses:
+        "204":
+          description: No content; see the Allow header
+          headers:
+            Allow: {$ref: "#/components/headers/Allow"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+
+  /orders/{orderId}:
+    parameters:
+      - {$ref: "#/components/parameters/OrderId"}
+    get:
+      tags: [orders]
+      summary: Read one order (cacheable, ETag)
+      operationId: getOrder
+      parameters:
+        - {$ref: "#/components/parameters/IfNoneMatch"}
+      responses:
+        "200":
+          description: The order
+          headers:
+            ETag: {$ref: "#/components/headers/ETag"}
+            Cache-Control:
+              description: private, max-age=30, must-revalidate
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Order"}
+            application/xml:
+              schema: {$ref: "#/components/schemas/Order"}
+        "304":
+          description: Not modified - your cached copy is still current (no body)
+          headers:
+            ETag: {$ref: "#/components/headers/ETag"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "406": {$ref: "#/components/responses/NotAcceptable"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+    patch:
+      tags: [orders]
+      summary: Change the delivery address (only while status is placed)
+      operationId: updateOrder
+      parameters:
+        - {$ref: "#/components/parameters/IfMatch"}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/OrderPatch"}
+      responses:
+        "200":
+          description: Updated order
+          headers:
+            ETag: {$ref: "#/components/headers/ETag"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Order"}
+        "400": {$ref: "#/components/responses/MalformedBody"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/IllegalTransition"}
+        "412": {$ref: "#/components/responses/PreconditionFailed"}
+        "415": {$ref: "#/components/responses/UnsupportedMediaType"}
+        "422": {$ref: "#/components/responses/ValidationFailed"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+    delete:
+      tags: [orders]
+      summary: Remove a cancelled or delivered order
+      operationId: deleteOrder
+      responses:
+        "204": {description: Removed (no body)}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/IllegalTransition"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+    options:
+      tags: [orders]
+      summary: Which methods does this order support? (also CORS preflight)
+      security: []
+      responses:
+        "204":
+          description: No content; see the Allow header
+          headers:
+            Allow: {$ref: "#/components/headers/Allow"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+
+  /orders/{orderId}/cancellation:
+    post:
+      tags: [orders]
+      summary: Cancel the order (creates its cancellation)
+      operationId: cancelOrder
+      parameters:
+        - {$ref: "#/components/parameters/OrderId"}
+      responses:
+        "200":
+          description: The order, now cancelled
+          headers:
+            ETag: {$ref: "#/components/headers/ETag"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Order"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/IllegalTransition"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+
+  /orders/{orderId}/progression:
+    post:
+      tags: [orders]
+      summary: Move the order to its next status (If-Match required)
+      operationId: advanceOrder
+      parameters:
+        - {$ref: "#/components/parameters/OrderId"}
+        - {$ref: "#/components/parameters/IfMatch"}
+      responses:
+        "200":
+          description: The order at its new status
+          headers:
+            ETag: {$ref: "#/components/headers/ETag"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Order"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/IllegalTransition"}
+        "412": {$ref: "#/components/responses/PreconditionFailed"}
+        "428": {$ref: "#/components/responses/PreconditionRequired"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Any non-empty token identifies the client (header handling only).
+
+  parameters:
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema: {type: integer, minimum: 1}
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Same key + same body returns the original order instead of creating a second one.
+      schema: {type: string, minLength: 1, maxLength: 128}
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      description: The order's current ETag. A stale value gives 412 (required on progression, else 428).
+      schema: {type: string}
+    IfNoneMatch:
+      name: If-None-Match
+      in: header
+      required: false
+      description: The ETag you already hold; a match gives 304 with no body.
+      schema: {type: string}
+
+  headers:
+    Location:
+      description: URL of the new order
+      schema: {type: string, example: /orders/42}
+    ETag:
+      description: Changes whenever the order changes
+      schema: {type: string, example: '"3e774731d33d9224"'}
+    Allow:
+      description: Methods supported on this resource
+      schema: {type: string, example: "GET, HEAD, PATCH, DELETE, OPTIONS"}
+    RateLimitLimit:
+      description: Requests allowed per window for this client
+      schema: {type: integer}
+    RateLimitRemaining:
+      description: Requests left in the current window
+      schema: {type: integer}
+    RetryAfter:
+      description: Seconds to wait before retrying
+      schema: {type: integer}
+
+  schemas:
+    OrderStatus:
+      type: string
+      enum: [placed, preparing, ready, delivered, cancelled]
+    OrderItemInput:
+      type: object
+      required: [item_id, qty]
+      additionalProperties: false
+      properties:
+        item_id: {type: string, minLength: 1, example: dosa}
+        qty: {type: integer, minimum: 1, maximum: 20, example: 2}
+    OrderCreate:
+      type: object
+      required: [items, address]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items: {$ref: "#/components/schemas/OrderItemInput"}
+        address: {type: string, minLength: 1, maxLength: 200, example: "Hostel B, Room 12"}
+    OrderPatch:
+      type: object
+      required: [address]
+      additionalProperties: false
+      properties:
+        address: {type: string, minLength: 1, maxLength: 200}
+    OrderLine:
+      type: object
+      properties:
+        item_id: {type: string}
+        name: {type: string}
+        qty: {type: integer}
+        unit_price: {type: integer}
+        line_total: {type: integer}
+    Order:
+      type: object
+      properties:
+        id: {type: integer}
+        status: {$ref: "#/components/schemas/OrderStatus"}
+        items:
+          type: array
+          items: {$ref: "#/components/schemas/OrderLine"}
+        address: {type: string}
+        total: {type: integer, description: Rupees}
+        currency: {type: string, example: INR}
+        paid: {type: boolean}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        links:
+          type: object
+          additionalProperties: {type: string}
+    OrderList:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {$ref: "#/components/schemas/Order"}
+        total: {type: integer}
+        limit: {type: integer}
+        offset: {type: integer}
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field: {type: string, example: "items[0].qty"}
+        message: {type: string, example: "must be an integer >= 1"}
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details - the ONLY error shape.
+      required: [type, title, status, detail]
+      properties:
+        type:
+          type: string
+          description: "Stable identifier, e.g. https://campuseats.example/problems/empty-cart"
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        instance: {type: string}
+        errors:
+          type: array
+          items: {$ref: "#/components/schemas/FieldError"}
+
+  responses:
+    MalformedBody:
+      description: "400 malformed-body - the body is not parseable JSON object"
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    Unauthorized:
+      description: "401 unauthorized - missing or empty bearer token"
+      headers:
+        WWW-Authenticate: {schema: {type: string}}
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    NotFound:
+      description: "404 order-not-found"
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    NotAcceptable:
+      description: "406 not-acceptable - only application/json and application/xml are produced"
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    IllegalTransition:
+      description: "409 illegal-transition - the order's status does not allow this"
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    RequestInProgress:
+      description: "409 request-in-progress - the same Idempotency-Key is still being processed"
+      headers:
+        Retry-After: {$ref: "#/components/headers/RetryAfter"}
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    PreconditionFailed:
+      description: "412 precondition-failed - the If-Match ETag is stale"
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    UnsupportedMediaType:
+      description: "415 unsupported-media-type - send Content-Type application/json"
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    ValidationFailed:
+      description: >-
+        422 - the body parsed but is refused: validation-failed (errors[] lists every bad field),
+        empty-cart, item-unavailable, payment-declined, or idempotency-key-reuse
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    PreconditionRequired:
+      description: "428 precondition-required - send If-Match"
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    TooManyRequests:
+      description: "429 rate-limited - per-client budget used up"
+      headers:
+        Retry-After: {$ref: "#/components/headers/RetryAfter"}
+        X-RateLimit-Limit: {$ref: "#/components/headers/RateLimitLimit"}
+        X-RateLimit-Remaining: {$ref: "#/components/headers/RateLimitRemaining"}
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    InternalError:
+      description: "500 internal-error - nothing internal is revealed"
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    BadGateway:
+      description: "502 upstream-error - a dependency answered unexpectedly"
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}
+    PaymentsUnavailable:
+      description: "503 payment-unavailable - Payments unreachable; no order was created"
+      headers:
+        Retry-After: {$ref: "#/components/headers/RetryAfter"}
+      content:
+        application/problem+json:
+          schema: {$ref: "#/components/schemas/Problem"}

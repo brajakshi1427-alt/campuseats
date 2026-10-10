@@ -1,0 +1,42 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.15, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\DELL\AppData\Local\Programs\Python\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\DELL\Downloads\CampusEats_Submission\CampusEats_Submission\Assignment6
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.15.1
+collecting ... collected 31 items
+
+tests/test_headers_and_errors.py::test_etag_then_304 PASSED              [  3%]
+tests/test_headers_and_errors.py::test_stale_if_match_returns_412 PASSED [  6%]
+tests/test_headers_and_errors.py::test_progression_requires_if_match PASSED [  9%]
+tests/test_headers_and_errors.py::test_missing_token_returns_401 PASSED  [ 12%]
+tests/test_headers_and_errors.py::test_unsupported_accept_returns_406 PASSED [ 16%]
+tests/test_headers_and_errors.py::test_options_lists_allowed_methods_and_cors PASSED [ 19%]
+tests/test_headers_and_errors.py::test_method_override_fallback PASSED   [ 22%]
+tests/test_headers_and_errors.py::test_rate_limit_is_per_client PASSED   [ 25%]
+tests/test_headers_and_errors.py::test_security_headers_present PASSED   [ 29%]
+tests/test_headers_and_errors.py::test_gzip_for_large_lists PASSED       [ 32%]
+tests/test_headers_and_errors.py::test_malformed_json_is_400_but_bad_fields_are_422 PASSED [ 35%]
+tests/test_headers_and_errors.py::test_two_field_errors_in_one_422 PASSED [ 38%]
+tests/test_headers_and_errors.py::test_empty_cart_and_unavailable_item PASSED [ 41%]
+tests/test_headers_and_errors.py::test_illegal_transition_is_409 PASSED  [ 45%]
+tests/test_headers_and_errors.py::test_cancel_then_delete PASSED         [ 48%]
+tests/test_headers_and_errors.py::test_same_key_different_body_is_422 PASSED [ 51%]
+tests/test_headers_and_errors.py::test_someone_elses_order_looks_missing PASSED [ 54%]
+tests/test_headers_and_errors.py::test_list_filters_and_validates_query PASSED [ 58%]
+tests/test_headers_and_errors.py::test_xml_when_asked PASSED             [ 61%]
+tests/test_headers_and_errors.py::test_payment_declined_maps_to_clean_422 PASSED [ 64%]
+tests/test_headers_and_errors.py::test_payments_down_fails_with_503_and_frees_the_key PASSED [ 67%]
+tests/test_headers_and_errors.py::test_unexpected_crash_is_hidden_from_client PASSED [ 70%]
+tests/test_orders.py::test_create_returns_201_and_location PASSED        [ 74%]
+tests/test_orders.py::test_idempotent_repeat_returns_original PASSED     [ 77%]
+tests/test_orders.py::test_bad_quantity_returns_422 PASSED               [ 80%]
+tests/test_orders.py::test_unknown_id_returns_404 PASSED                 [ 83%]
+tests/test_payments_client.py::test_retries_transient_failures_then_succeeds PASSED [ 87%]
+tests/test_payments_client.py::test_4xx_is_never_retried PASSED          [ 90%]
+tests/test_payments_client.py::test_gives_up_after_all_attempts PASSED   [ 93%]
+tests/test_payments_client.py::test_backoff_grows_and_is_capped PASSED   [ 96%]
+tests/test_payments_client.py::test_url_comes_from_environment PASSED    [100%]
+
+============================= 31 passed in 0.12s ==============================
