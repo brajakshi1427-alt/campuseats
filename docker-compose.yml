@@ -1,0 +1,8 @@
+# Optional: real MySQL instead of the built-in SQLite fallback
+#   docker compose up -d      then      MYSQL_HOST=localhost MYSQL_PASSWORD=example node server.js
+services:
+  mysql:
+    image: mysql:8.4
+    ports: ["3306:3306"]
+    environment: { MYSQL_ROOT_PASSWORD: example, MYSQL_DATABASE: campuseats }
+    volumes: ["./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro"]
