@@ -1,7 +1,7 @@
 # CampusEats — Menu service in GraphQL (Assignment 7)
 
-**Team:** `<Name — Roll No>` · `<Name — Roll No>` · …
-**Demo video:** `<Google Drive link>`  ·  **Screenshots:** `screenshots/before.png`, `screenshots/after.png`
+**Team:** `<Name Brajakshi mandloi  Roll No 20252651016>` · `<Name Vaishnavi Tiwari Roll No 20252651061>` · …
+**Demo video:** `<Google Drive link -   https://drive.google.com/drive/folders/17vNkjCRJiTylgmmBA2pTqUqNFo6wpKXL?usp=sharing>`  ·  **Screenshots:** `screenshots/before.png`, `screenshots/after.png`
 
 ## Run (one step)
 Double-click **`RUN.bat`** (Windows) or run `bash RUN.sh` (Mac/Linux). It installs dependencies, starts the server and opens http://localhost:4000.
