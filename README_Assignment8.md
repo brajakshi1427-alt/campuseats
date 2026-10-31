@@ -83,8 +83,8 @@ The Google Drive folder below contains the demonstration video and the before-PO
 
 ## 10. Team members
 
-- **Brajakshi Mandloi** — Roll Number: [Enter roll number]
-- **Vaishnavi Tiwari** — Roll Number: [Enter roll number]
+- **Brajakshi Mandloi** — Roll Number: [20252651016]
+- **Vaishnavi Tiwari** — Roll Number: [20252651061]
 
 ## 11. Conclusion
 
