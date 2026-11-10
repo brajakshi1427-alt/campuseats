@@ -1,14 +1,16 @@
 {
-  "name": "campuseats-graphql",
+  "name": "campuseats-assignment-9",
   "version": "1.0.0",
-  "description": "CampusEats Menu service exposed through GraphQL (Assignment 7)",
+  "private": true,
+  "description": "Assignment 9 - CampusEats Menu Catalogue REST API secured with JWT, bcrypt and role checks",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
-    "@apollo/server": "^4.11.0",
-    "express": "^4.21.0",
-    "graphql": "^16.9.0",
-    "mysql2": "^3.11.0",
-    "sql.js": "^1.11.0"
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
   }
 }

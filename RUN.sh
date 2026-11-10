@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
+set -e
 cd "$(dirname "$0")"
+if ! command -v node >/dev/null 2>&1; then
+  echo "Node.js is not installed. Install the LTS version from https://nodejs.org/"; exit 1
+fi
 [ -d node_modules ] || npm install
-(sleep 4; (xdg-open http://localhost:4000 || open http://localhost:4000) >/dev/null 2>&1) &
-node server.js
+node setup-env.js
+npm start

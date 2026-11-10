@@ -1,80 +1,86 @@
-# CampusEats — Menu Service in GraphQL (Assignment 7)
+# CampusEats — Securing the API (Assignment 9)
 
-## Team Members
+**Course:** CS543 Web Services  
+**Service secured:** Menu / Catalogue (same service as Assignment 8)  
+**Stack:** Node.js, Express, `jsonwebtoken`, `bcryptjs`, `dotenv`
 
-- **Brajakshi Mandloi** — Roll No. 20252651016
-- **Vaishnavi Tiwari** — Roll No. 20252651061
+**Team members:** Add roll numbers and names here.  
+**Demo video + screenshots (Google Drive):** Add share link here.
 
-## Demonstration Video and Screenshots
+## Run
 
-**Google Drive Folder:**  
-https://drive.google.com/drive/folders/17vNkjCRJiTylgmmBA2pTqUqNFo6wpKXL?usp=sharing
+Windows: double-click **`RUN.bat`** (installs packages the first time, creates `.env` with a random `JWT_SECRET`, opens http://localhost:4009).  
+Mac/Linux: `bash RUN.sh`.
 
-The folder contains the demonstration video and before/after mutation screenshots.
+To print all five required cases in one go (for screenshots): double-click **`DEMO.bat`** (or `bash DEMO.sh`). The output is also saved in `demo-output.txt`.
 
-## Project Overview
+Manual setup: `npm install`, copy `.env.example` to `.env`, put a long random value in `JWT_SECRET`, then `npm start`.
 
-This project implements the CampusEats Menu/Dishes service using GraphQL. It demonstrates how clients can retrieve dish information and add a new dish through a GraphQL mutation.
+## Demo users (passwords are stored only as bcrypt hashes)
 
-## Technologies
+| Username | Password | Role |
+|---|---|---|
+| customer | customer123 | customer |
+| restaurant | restaurant123 | restaurant |
+| admin | admin123 | admin |
 
-- GraphQL
-- Node.js
-- Apollo Server
-- HTML, CSS and JavaScript
-- Database configured by the project
+## Routes
 
-## Project Files
+| Method | Path | Needs | Result |
+|---|---|---|---|
+| POST | `/login` | nothing (public) | 200 + JWT, or 401 |
+| GET | `/items` | valid token | 200, or 401 |
+| GET | `/items/:id` | valid token | 200 / 404, or 401 |
+| POST | `/items` | valid token **and** role `restaurant` or `admin` | 201 / 422, or 401 / 403 |
 
-- `schema.graphql` — GraphQL types, queries and mutations
-- `server.js` — Server and GraphQL resolvers
-- `db.js` — Database connection and queries
-- `schema.sql` — Table definition and sample data
-- `public/index.html` — Frontend page
+## Test with curl (Windows cmd — use `^` for line breaks, on Mac/Linux use `\`)
 
-## Example Query
+```bash
+# 1. No token -> 401
+curl -i http://localhost:4009/items
 
-```graphql
-query {
-  dishes {
-    id
-    name
-    price
-    available
-  }
-}
+# 2. Login -> token
+curl -i -X POST http://localhost:4009/login -H "Content-Type: application/json" -d "{\"username\":\"customer\",\"password\":\"customer123\"}"
+
+# 3. With token -> 200   (paste the token from step 2)
+curl -i http://localhost:4009/items -H "Authorization: Bearer <TOKEN>"
+
+# 4. Restaurant logs in, then creates an item -> 201
+curl -i -X POST http://localhost:4009/login -H "Content-Type: application/json" -d "{\"username\":\"restaurant\",\"password\":\"restaurant123\"}"
+curl -i -X POST http://localhost:4009/items -H "Authorization: Bearer <RESTAURANT_TOKEN>" -H "Content-Type: application/json" -d "{\"name\":\"Veg Sandwich\",\"price\":75}"
+
+# 5. Customer token on the write route -> 403
+curl -i -X POST http://localhost:4009/items -H "Authorization: Bearer <TOKEN>" -H "Content-Type: application/json" -d "{\"name\":\"Test\",\"price\":10}"
 ```
 
-## Example Mutation
+The browser page at http://localhost:4009 has a login box too: log in as `customer` and try "Add a dish" to see the 403, then log in as `restaurant` to see the 201.
 
-```graphql
-mutation {
-  addDish(input: { name: "Paneer Roll", price: 90 }) {
-    id
-    name
-    price
-  }
-}
-```
+## Answers for the README questions
 
-## How to Run
+1. **Which routes need only authentication, and which also need a role?**  
+   Only authentication (any logged-in user, roles `customer`, `restaurant`, `admin`): `GET /items` and `GET /items/:id`.  
+   Authentication **and** a role: `POST /items`, allowed only for `restaurant` and `admin`.  
+   `POST /login` is public because it is how a user gets a token.
 
-Follow the run instructions provided in the project files. Start the server, open the frontend page in your browser, list the dishes, and add a dish such as Paneer Roll with price 90.
+2. **One 401 and one 403, and why that code and not the other.**  
+   - `GET /items` with no token returns **401** `{"error":"Missing token. Send Authorization: Bearer <token>"}`. The server does not know who is calling, so authentication failed. It is not 403 because there is no identity to refuse yet.  
+   - `POST /items` with a *customer* token returns **403** `{"error":"Forbidden: your role may not do this"}`. The token is valid, so the server knows who the caller is, but that role is not allowed to change data. It is not 401 because authentication succeeded.
 
-## Answers to Assignment Questions
+3. **What is inside the JWT payload? Why trust the role claim? Why keep the secret out of code?**  
+   The payload is `{ "id": <user id>, "role": <role>, "iat": <issued at>, "exp": <expiry> }`.  
+   The role claim can be trusted because the token is signed (HMAC-SHA256) with the server's secret. If anyone edits the payload (for example changes `customer` to `admin`), the signature no longer matches and `jwt.verify` rejects it with 401. Only someone who knows the secret can create a valid token. The role is also never taken from the request body.  
+   The secret must stay out of the code (and out of GitHub) because anyone who has it can sign their own tokens with any role and become admin. So it is read from `process.env.JWT_SECRET` (the `.env` file is git-ignored; only `.env.example` with a blank value is committed), and it can be changed per environment without touching the code.
 
-### 1. Which CampusEats service did you pick?
+## Notes on the implementation
 
-We selected the **Menu/Dishes service**, which allows clients to retrieve dish information and add new dishes.
+- Passwords are hashed with `bcrypt.hashSync` and checked with `bcrypt.compareSync`; plain passwords are never stored or returned.
+- Wrong username and wrong password give the same 401 message, so an attacker cannot find out which usernames exist.
+- `jwt.verify` is called with `algorithms: ['HS256']` and tokens expire (`expiresIn`, default `1h`; an expired token gives 401 "Token expired").
+- Middleware order on the write route is `auth` first, then `requireRole(...)`: *who are you?* then *may you?*
 
-### 2. Name one field a client can skip and one it cannot. Why do we use `!`?
+## Submission checklist
 
-A client can omit a nullable field from its query if it does not need that information. A non-null field, marked with `!` in the schema, cannot return `null` in a valid response. However, the client does not have to request every non-null field in every query.
-
-### 3. Map the query to SQL. Which part became the WHERE clause, and which resolver ran INSERT?
-
-When a dish is retrieved by ID, the ID argument can be used in a SQL condition such as `WHERE id = ?`. The `addDish` mutation resolver runs the SQL `INSERT` statement to add a new dish.
-
-## Conclusion
-
-This project demonstrates a GraphQL API with a query for retrieving dishes and a mutation for adding a dish to the CampusEats menu.
+- [ ] Add team names + roll numbers above
+- [ ] Take screenshots of the five cases (run `DEMO.bat`, or use curl / the browser page)
+- [ ] Record a short demo video and upload to Google Drive, paste the link above
+- [ ] Push to GitHub (`.env` must NOT be committed — it is already in `.gitignore`)
